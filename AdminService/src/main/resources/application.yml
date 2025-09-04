@@ -18,3 +18,8 @@ spring:
         format_sql: true    # Format the logged SQL statements
         
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+    
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/

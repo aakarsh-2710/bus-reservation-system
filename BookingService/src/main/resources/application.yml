@@ -26,3 +26,8 @@ spring:
 inventory:
   service:
     url: http://localhost:8084/inventory/seats
+    
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/

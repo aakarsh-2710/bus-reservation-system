@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.mcs.inventory.entity.BusInventory;
 import com.mcs.inventory.model.BusInventoryDTO;
+import com.mcs.inventory.model.CancelBookingEvent;
 import com.mcs.inventory.model.InventoryEvent;
 import com.mcs.inventory.model.PaymentEvent;
 import com.mcs.inventory.repository.BusInventoryRepository;
@@ -83,4 +84,22 @@ public class InventoryService {
 		repository.save(busInventory);
 
 	}
+
+	public void processCancelBooking(CancelBookingEvent event) {
+	    BusInventory inv = repository.findById(event.getBusId())
+	            .orElseThrow(() -> new RuntimeException("Bus not found"));
+
+	    inv.setAvailableSeats(inv.getAvailableSeats() + event.getNoOfSeats());
+	    inv.setLastUpdated(LocalDateTime.now());
+	    repository.save(inv);
+
+	    // notify booking service
+	    InventoryEvent inventoryEvent = new InventoryEvent();
+	    inventoryEvent.setBookingNo(event.getBookingNo());
+	    inventoryEvent.setBusId(event.getBusId());
+	    inventoryEvent.setStatus("CANCELLED");
+
+	    kafkaTemplate.send("inventory-events", inventoryEvent);
+	}
+
 }

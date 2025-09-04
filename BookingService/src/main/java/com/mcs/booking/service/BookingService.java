@@ -1,7 +1,5 @@
 package com.mcs.booking.service;
 
-import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -18,7 +16,9 @@ import com.mcs.booking.entity.Booking;
 import com.mcs.booking.entity.Passenger;
 import com.mcs.booking.model.BookingCreatedEvent;
 import com.mcs.booking.model.BookingRequest;
+import com.mcs.booking.model.CancelBookingEvent;
 import com.mcs.booking.model.InventoryEvent;
+import com.mcs.booking.producer.CancelBookingProducer;
 import com.mcs.booking.repository.BookingRepository;
 import com.mcs.booking.repository.PassengerRepository;
 
@@ -31,16 +31,18 @@ public class BookingService {
 	private final KafkaTemplate<String, String> kafkaTemplate;
 	private final ObjectMapper objectMapper;
 	private final String inventoryUrl; // from config
+	private CancelBookingProducer bookingProducer;
 
 	public BookingService(BookingRepository bookingRepository, PassengerRepository passengerRepository,
 			RestTemplate restTemplate, KafkaTemplate<String, String> kafkaTemplate, ObjectMapper objectMapper,
-			@Value("${inventory.service.url}") String inventoryUrl) {
+			@Value("${inventory.service.url}") String inventoryUrl, CancelBookingProducer bookingProducer) {
 		this.bookingRepository = bookingRepository;
 		this.passengerRepository = passengerRepository;
 		this.restTemplate = restTemplate;
 		this.kafkaTemplate = kafkaTemplate;
 		this.objectMapper = objectMapper;
 		this.inventoryUrl = inventoryUrl;
+		this.bookingProducer = bookingProducer;
 	}
 
 	public Booking createBooking(BookingRequest req) {
@@ -104,16 +106,41 @@ public class BookingService {
 	}
 
 	public void updateBookingStatusFromInventory(InventoryEvent event) {
-		Optional<Booking> opt = bookingRepository.findByBookingNumber(event.getBookingNo());
+		Booking booking = bookingRepository.findByBookingNumber(event.getBookingNo())
+				.orElseThrow(() -> new RuntimeException("Booking not found"));
 
-		if (opt.isPresent()) {
-			Booking booking = opt.get();
-			if ("CONFIRMED".equals(event.getStatus())) {
-				booking.setStatus("CONFIRMED");
-			} else {
-				booking.setStatus("CANCELLED");
-			}
-			bookingRepository.save(booking);
+		if ("CONFIRMED".equals(event.getStatus())) {
+			booking.setStatus("CONFIRMED");
+		} else if ("REJECTED".equals(event.getStatus())) {
+			booking.setStatus("CANCELLED");
+		} else if ("CANCELLED".equals(event.getStatus())) {
+			booking.setStatus("CANCELLED");
 		}
+		bookingRepository.save(booking);
 	}
+
+	// BookingService.java
+	public CancelBookingEvent cancelBooking(Long bookingId) {
+		Booking booking = bookingRepository.findById(bookingId)
+				.orElseThrow(() -> new RuntimeException("Booking not found"));
+
+		if (!"CONFIRMED".equals(booking.getStatus())) {
+			throw new IllegalStateException("Only CONFIRMED bookings can be cancelled");
+		}
+
+		booking.setStatus("CANCEL_PENDING");
+		bookingRepository.save(booking);
+
+		CancelBookingEvent event = new CancelBookingEvent();
+		event.setBookingNo(booking.getBookingNumber());
+		event.setBusId(booking.getBusId());
+		event.setNoOfSeats(booking.getNumSeats());
+		event.setStatus("CANCEL_PENDING");
+
+		// Publish event
+		bookingProducer.publish(event);
+
+		return event;
+	}
+
 }
