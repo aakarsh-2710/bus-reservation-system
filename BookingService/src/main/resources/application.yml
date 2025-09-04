@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: BookingService
+    
+  datasource:
+    url: jdbc:postgresql://localhost:5432/booking_db   # The JDBC URL for the database
+    username: postgres                                    # The username for the database
+    password: password                                  # The password for the database
+    driver-class-name: org.postgresql.Driver       # The JDBC driver class
+    
+    
+  jpa:
+    hibernate:
+      ddl-auto: update      # Automatically update the database schema
+    show-sql: true          # Log SQL statements
+    properties:
+      hibernate:
+        format_sql: true    # Format the logged SQL statements
+        
+# Kafka bootstrap - change to your env
+
+  kafka:
+    bootstrap-servers: localhost:9092
+
+# Inventory endpoint (simple, non-loadbalanced for now)
+inventory:
+  service:
+    url: http://localhost:8084/inventory/seats

@@ -1,0 +1,43 @@
+HELP.md
+target/
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### Maven Wrapper Files ###
+.mvn/
+!/.mvn/wrapper/maven-wrapper.jar
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+### Generated Files ###
+# For cases where IDEs generate .mvnw files
+# This is typically not needed if you use the wrapper correctly,
+# but can be added if you want to explicitly ignore
+# mvnw
+# mvnw.cmd

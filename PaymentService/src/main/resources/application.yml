@@ -1,0 +1,33 @@
+
+spring:
+  application:
+    name: PaymentService
+    
+  datasource:
+    url: jdbc:postgresql://localhost:5432/payment_db   # The JDBC URL for the database
+    username: postgres                                    # The username for the database
+    password: password                                  # The password for the database
+    driver-class-name: org.postgresql.Driver       # The JDBC driver class
+    
+    
+  jpa:
+    hibernate:
+      ddl-auto: update      # Automatically update the database schema
+    show-sql: true          # Log SQL statements
+    properties:
+      hibernate:
+        format_sql: true    # Format the logged SQL statements
+    
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: payment-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+    
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    listener:
+      ack-mode: record
