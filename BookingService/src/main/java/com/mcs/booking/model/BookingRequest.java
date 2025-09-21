@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotNull;
 
 public class BookingRequest {
 
-	@NotBlank
+	@NotNull
 	private Integer busId;
 	@NotNull
 	@Min(1)

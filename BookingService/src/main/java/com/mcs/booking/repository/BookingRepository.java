@@ -1,6 +1,6 @@
 package com.mcs.booking.repository;
 
-import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -8,7 +8,6 @@ import org.springframework.stereotype.Repository;
 import com.mcs.booking.entity.Booking;
 
 @Repository
-public interface BookingRepository extends JpaRepository<Booking, Long> {
+public interface BookingRepository extends JpaRepository<Booking, UUID> {
 
-	Optional<Booking> findByBookingNumber(String bookingNumber);
 }

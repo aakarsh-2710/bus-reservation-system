@@ -3,6 +3,9 @@ package com.mcs.booking.entity;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+
+import org.hibernate.annotations.UuidGenerator;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -17,10 +20,8 @@ import jakarta.persistence.Table;
 public class Booking {
 
 	@Id
-	private Long id;
-
-	@Column(nullable = false)
-	private String bookingNumber;
+	@UuidGenerator
+	private UUID bookingId;
 
 	@Column(nullable = false)
 	private Integer busId;
@@ -39,24 +40,16 @@ public class Booking {
 
 	@Column(nullable = false)
 	private String status; // PENDING, CONFIRMED, CANCELLED, PAYMENT_FAILED
-	
+
 	@OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 	private List<Passenger> passengers = new ArrayList<>();
 
-	public Long getId() {
-		return id;
+	public UUID getBookingId() {
+		return bookingId;
 	}
 
-	public void setId(Long id) {
-		this.id = id;
-	}
-
-	public String getBookingNumber() {
-		return bookingNumber;
-	}
-
-	public void setBookingNumber(String bookingNumber) {
-		this.bookingNumber = bookingNumber;
+	public void setBookingId(UUID bookingId) {
+		this.bookingId = bookingId;
 	}
 
 	public Integer getBusId() {

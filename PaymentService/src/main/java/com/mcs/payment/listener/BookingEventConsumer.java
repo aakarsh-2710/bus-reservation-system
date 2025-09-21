@@ -15,7 +15,7 @@ public class BookingEventConsumer {
 		this.service = service;
 	}
 
-	@KafkaListener(topics = "booking-events", groupId = "payment-service")
+	@KafkaListener(topics = "booking-created", groupId = "payment-service")
 	public void consume(BookingEvent event) {
 		service.processPayment(event);
 	}

@@ -1,17 +1,19 @@
 package com.mcs.booking.model;
 
+import java.util.UUID;
+
 public class BookingCreatedEvent {
 
-	private String bookingNumber;
+	private UUID bookingId;
 	private Integer busId;
 	private Integer numSeats;
 
-	public String getBookingNumber() {
-		return bookingNumber;
+	public UUID getBookingId() {
+		return bookingId;
 	}
 
-	public void setBookingNumber(String bookingNumber) {
-		this.bookingNumber = bookingNumber;
+	public void setBookingId(UUID bookingId) {
+		this.bookingId = bookingId;
 	}
 
 	public Integer getBusId() {

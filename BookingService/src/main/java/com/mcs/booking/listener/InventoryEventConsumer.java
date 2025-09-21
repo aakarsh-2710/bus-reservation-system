@@ -18,6 +18,6 @@ public class InventoryEventConsumer {
 
     @KafkaListener(topics = "inventory-events", groupId = "booking-service")
     public void consume(InventoryEvent event) {
-        bookingService.updateBookingStatusFromInventory(event);
+      //  bookingService.updateBookingStatusFromInventory(event);
     }
 }

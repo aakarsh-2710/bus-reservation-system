@@ -1,7 +1,11 @@
 package com.mcs.payment.entity;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
+import org.hibernate.annotations.UuidGenerator;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 
@@ -9,36 +13,46 @@ import jakarta.persistence.Id;
 public class Payment {
 
 	@Id
-	private String paymentNo;
+	@UuidGenerator
+	private UUID paymentId;
 
-	private String bookingNo;
-	private String busNo;
+	@Column(nullable = false)
+	private UUID bookingId;
+
+	@Column(nullable = false)
+	private Integer busId;
+
+	@Column(nullable = false)
 	private double amount;
+
+	@Column(nullable = false)
 	private LocalDateTime dateOfPayment;
+
+	@Column(nullable = false)
 	private String status; // SUCCESS / FAILED
 
-	public String getPaymentNo() {
-		return paymentNo;
+	public UUID getPaymentId() {
+		return paymentId;
 	}
 
-	public void setPaymentNo(String paymentNo) {
-		this.paymentNo = paymentNo;
+	public void setPaymentId(UUID paymentId) {
+		this.paymentId = paymentId;
 	}
 
-	public String getBookingNo() {
-		return bookingNo;
+	public UUID getBookingId() {
+		return bookingId;
 	}
 
-	public void setBookingNo(String bookingNo) {
-		this.bookingNo = bookingNo;
+	public void setBookingId(UUID bookingId) {
+		this.bookingId = bookingId;
 	}
 
-	public String getBusNo() {
-		return busNo;
+	public Integer getBusId() {
+		return busId;
 	}
 
-	public void setBusNo(String busNo) {
-		this.busNo = busNo;
+	public void setBusId(Integer busId) {
+		this.busId = busId;
 	}
 
 	public double getAmount() {

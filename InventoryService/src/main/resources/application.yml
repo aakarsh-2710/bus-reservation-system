@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: InventoryService
+    name: inventory-service
     
   datasource:
     url: jdbc:postgresql://localhost:5432/inventory_db   # The JDBC URL for the database

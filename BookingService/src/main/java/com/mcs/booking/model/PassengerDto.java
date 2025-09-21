@@ -1,9 +1,15 @@
 package com.mcs.booking.model;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
 public class PassengerDto {
 
+	@NotBlank
 	private String name;
+	@NotNull
 	private Integer age;
+	@NotBlank
 	private String phone;
 
 	public String getName() {

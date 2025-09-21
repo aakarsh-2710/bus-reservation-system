@@ -1,9 +1,7 @@
-package com.mcs.admin.util;
+package com.mcs.booking.util;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
-import com.mcs.admin.model.HttpResponse;
 
 // This is a utility class to return {@link ResponseEntity} containing an {@link HttpResponse} 
 // with the success status, message, and status code.

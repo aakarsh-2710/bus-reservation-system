@@ -47,19 +47,7 @@ public class InventoryService {
 		kafkaTemplate.send("inventory-events", inventoryEvent);
 	}
 
-	public Integer getAvailableSeats(Integer busID) {
-
-		Optional<BusInventory> busDetail = repository.findById(busID);
-		if (busDetail.isPresent()) {
-			return busDetail.get().getAvailableSeats();
-		}
-
-		return -1;
-	}
-
 	public void addInventory(@Valid BusInventoryDTO inventoryDTO) {
-//		BusInventory busInventory = repository.findById(inventoryDTO.getBusId())
-//				.orElseThrow(() -> new RuntimeException("Bus not found"));
 
 		BusInventory busInventory = new BusInventory();
 		busInventory.setBusId(inventoryDTO.getBusId());
@@ -72,34 +60,36 @@ public class InventoryService {
 
 	}
 
-	public void updateInventory(@Valid BusInventoryDTO inventoryDTO) {
-		BusInventory busInventory = repository.findById(inventoryDTO.getBusId())
+	public void processCancelBooking(CancelBookingEvent event) {
+		BusInventory inv = repository.findById(event.getBusId())
 				.orElseThrow(() -> new RuntimeException("Bus not found"));
 
-		busInventory.setAvailableSeats(inventoryDTO.getAvailableSeats());
+		inv.setAvailableSeats(inv.getAvailableSeats() + event.getNoOfSeats());
+		inv.setLastUpdated(LocalDateTime.now());
+		repository.save(inv);
 
-		LocalDateTime dateTime = LocalDateTime.now();
-		busInventory.setLastUpdated(dateTime);
+		// notify booking service
+		InventoryEvent inventoryEvent = new InventoryEvent();
+		inventoryEvent.setBookingNo(event.getBookingNo());
+		inventoryEvent.setBusId(event.getBusId());
+		inventoryEvent.setStatus("CANCELLED");
 
-		repository.save(busInventory);
+		kafkaTemplate.send("inventory-events", inventoryEvent);
+	}
+
+	public void deleteBus(Integer busId) {
+
+		repository.deleteById(busId);
 
 	}
 
-	public void processCancelBooking(CancelBookingEvent event) {
-	    BusInventory inv = repository.findById(event.getBusId())
-	            .orElseThrow(() -> new RuntimeException("Bus not found"));
+	public Integer getSeatsAvailable(Integer busId) {
+		Optional<BusInventory> busDetail = repository.findById(busId);
+		if (busDetail.isPresent()) {
+			return busDetail.get().getAvailableSeats();
+		}
 
-	    inv.setAvailableSeats(inv.getAvailableSeats() + event.getNoOfSeats());
-	    inv.setLastUpdated(LocalDateTime.now());
-	    repository.save(inv);
-
-	    // notify booking service
-	    InventoryEvent inventoryEvent = new InventoryEvent();
-	    inventoryEvent.setBookingNo(event.getBookingNo());
-	    inventoryEvent.setBusId(event.getBusId());
-	    inventoryEvent.setStatus("CANCELLED");
-
-	    kafkaTemplate.send("inventory-events", inventoryEvent);
+		return -1;
 	}
 
 }

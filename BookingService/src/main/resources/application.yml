@@ -1,6 +1,9 @@
+server:
+  port: 8081
+
 spring:
   application:
-    name: BookingService
+    name: booking-service
     
   datasource:
     url: jdbc:postgresql://localhost:5432/booking_db   # The JDBC URL for the database
@@ -21,11 +24,6 @@ spring:
 
   kafka:
     bootstrap-servers: localhost:9092
-
-# Inventory endpoint (simple, non-loadbalanced for now)
-inventory:
-  service:
-    url: http://localhost:8084/inventory/seats
     
 eureka:
   client:

@@ -1,28 +1,29 @@
 package com.mcs.booking.service;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mcs.booking.entity.Booking;
 import com.mcs.booking.entity.Passenger;
+import com.mcs.booking.exception.SeatsNotAvailableException;
 import com.mcs.booking.model.BookingCreatedEvent;
 import com.mcs.booking.model.BookingRequest;
-import com.mcs.booking.model.CancelBookingEvent;
-import com.mcs.booking.model.InventoryEvent;
+import com.mcs.booking.model.PassengerDto;
 import com.mcs.booking.producer.CancelBookingProducer;
 import com.mcs.booking.repository.BookingRepository;
 import com.mcs.booking.repository.PassengerRepository;
+import com.mcs.booking.util.MessageConstant;
 
 @Service
+@Transactional
 public class BookingService {
 
 	private final BookingRepository bookingRepository;
@@ -30,117 +31,124 @@ public class BookingService {
 	private final RestTemplate restTemplate;
 	private final KafkaTemplate<String, String> kafkaTemplate;
 	private final ObjectMapper objectMapper;
-	private final String inventoryUrl; // from config
 	private CancelBookingProducer bookingProducer;
 
 	public BookingService(BookingRepository bookingRepository, PassengerRepository passengerRepository,
 			RestTemplate restTemplate, KafkaTemplate<String, String> kafkaTemplate, ObjectMapper objectMapper,
-			@Value("${inventory.service.url}") String inventoryUrl, CancelBookingProducer bookingProducer) {
+			CancelBookingProducer bookingProducer) {
 		this.bookingRepository = bookingRepository;
 		this.passengerRepository = passengerRepository;
 		this.restTemplate = restTemplate;
 		this.kafkaTemplate = kafkaTemplate;
 		this.objectMapper = objectMapper;
-		this.inventoryUrl = inventoryUrl;
 		this.bookingProducer = bookingProducer;
 	}
 
-	public Booking createBooking(BookingRequest req) {
+	public Booking createBooking(BookingRequest bookingRequest) {
 
-		ResponseEntity<Integer> response;
-		try {
+		// check for seats availability first
+		String url = "http://INVENTORY-SERVICE/inventory/getAvailableSeats/" + bookingRequest.getBusId();
+		Integer availableSeats = restTemplate.getForObject(url, Integer.class);
 
-			// Build the URL with the query parameter
-			UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(inventoryUrl).queryParam("busId",
-					req.getBusId());
-
-			// Make the GET request and get the full response entity
-			response = restTemplate.exchange(builder.toUriString(), HttpMethod.GET, null, Integer.class);
-		} catch (Exception ex) {
-			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Inventory service unavailable");
+		// Throw Exception if Requested seats are greater than available seats
+		if (availableSeats < bookingRequest.getNumSeats()) {
+			throw new SeatsNotAvailableException(
+					String.format(MessageConstant.SEATS_NOT_AVAILABLE, bookingRequest.getNumSeats(), availableSeats));
 		}
-		Integer available = response.getBody();
-		if (available < req.getNumSeats()) {
-			throw new ResponseStatusException(HttpStatus.CONFLICT, "Not enough seats");
-		}
+		// persist booking
+		Booking bookingSaved = persistBooking(bookingRequest);
 
-		// 2) persist booking and passengers
-		Booking booking = new Booking();
-		booking.setBusId(req.getBusId());
-		booking.setNumSeats(req.getNumSeats());
-		booking.setSource(req.getSource());
-		booking.setDestination(req.getDestination());
-		booking.setStatus("PENDING");
-		Booking saved = bookingRepository.save(booking);
+		// persist All passengers
+		persistPassengers(bookingRequest.getPassengers(), bookingSaved);
 
-		if (req.getPassengers() != null) {
-			for (var p : req.getPassengers()) {
-				Passenger passenger = new Passenger();
-				passenger.setName(p.getName());
-				passenger.setAge(p.getAge());
-				passenger.setPhone(p.getPhone());
-				passenger.setBooking(saved);
-				passengerRepository.save(passenger);
-			}
-		}
+		// publish booking to kafka
+		publishBookingToKafka(bookingSaved);
 
-		// 3) publish event to Kafka
+		return bookingSaved;
+	}
+
+	private void publishBookingToKafka(Booking bookingSaved) {
+
 		BookingCreatedEvent event = new BookingCreatedEvent();
-		event.setBookingNumber(saved.getBookingNumber());
-		event.setBusId(saved.getBusId());
-		event.setNumSeats(saved.getNumSeats());
+		event.setBookingId(bookingSaved.getBookingId());
+		event.setBusId(bookingSaved.getBusId());
+		event.setNumSeats(bookingSaved.getNumSeats());
 		try {
 			String payload = objectMapper.writeValueAsString(event);
-			kafkaTemplate.send("booking.created", saved.getBookingNumber(), payload);
+			kafkaTemplate.send("booking.created", bookingSaved.getBookingId().toString(), payload);
 		} catch (JsonProcessingException e) {
-			// log and continue - event publishing can be retried later by an outbox pattern
 			throw new RuntimeException("Failed to serialize event", e);
 		}
 
-		return saved;
 	}
 
-	public Booking getBookingDetails(String bookingNumber) {
-		return bookingRepository.findByBookingNumber(bookingNumber)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
-	}
-
-	public void updateBookingStatusFromInventory(InventoryEvent event) {
-		Booking booking = bookingRepository.findByBookingNumber(event.getBookingNo())
-				.orElseThrow(() -> new RuntimeException("Booking not found"));
-
-		if ("CONFIRMED".equals(event.getStatus())) {
-			booking.setStatus("CONFIRMED");
-		} else if ("REJECTED".equals(event.getStatus())) {
-			booking.setStatus("CANCELLED");
-		} else if ("CANCELLED".equals(event.getStatus())) {
-			booking.setStatus("CANCELLED");
+	private void persistPassengers(List<PassengerDto> passengers, Booking bookingSaved) {
+		List<Passenger> passengerList = new ArrayList<>();
+		for (var p : passengers) {
+			Passenger passenger = new Passenger();
+			passenger.setName(p.getName());
+			passenger.setAge(p.getAge());
+			passenger.setPhone(p.getPhone());
+			passenger.setBooking(bookingSaved);
+			passengerList.add(passenger);
 		}
-		bookingRepository.save(booking);
+		passengerRepository.saveAll(passengerList);
+
 	}
+
+	private Booking persistBooking(BookingRequest bookingRequest) {
+		Booking booking = new Booking();
+		booking.setBusId(bookingRequest.getBusId());
+		booking.setNumSeats(bookingRequest.getNumSeats());
+		booking.setSource(bookingRequest.getSource());
+		booking.setDestination(bookingRequest.getDestination());
+		booking.setBookingDate(LocalDateTime.now());
+		booking.setStatus("PENDING");
+		return bookingRepository.save(booking);
+
+	}
+
+//	public Booking getBookingDetails(String bookingNumber) {
+//		return bookingRepository.findByBookingNumber(bookingNumber)
+//				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
+//	}
+
+//	public void updateBookingStatusFromInventory(InventoryEvent event) {
+//		Booking booking = bookingRepository.findByBookingNumber(event.getBookingNo())
+//				.orElseThrow(() -> new RuntimeException("Booking not found"));
+//
+//		if ("CONFIRMED".equals(event.getStatus())) {
+//			booking.setStatus("CONFIRMED");
+//		} else if ("REJECTED".equals(event.getStatus())) {
+//			booking.setStatus("CANCELLED");
+//		} else if ("CANCELLED".equals(event.getStatus())) {
+//			booking.setStatus("CANCELLED");
+//		}
+//		bookingRepository.save(booking);
+//	}
 
 	// BookingService.java
-	public CancelBookingEvent cancelBooking(Long bookingId) {
-		Booking booking = bookingRepository.findById(bookingId)
-				.orElseThrow(() -> new RuntimeException("Booking not found"));
-
-		if (!"CONFIRMED".equals(booking.getStatus())) {
-			throw new IllegalStateException("Only CONFIRMED bookings can be cancelled");
-		}
-
-		booking.setStatus("CANCEL_PENDING");
-		bookingRepository.save(booking);
-
-		CancelBookingEvent event = new CancelBookingEvent();
-		event.setBookingNo(booking.getBookingNumber());
-		event.setBusId(booking.getBusId());
-		event.setNoOfSeats(booking.getNumSeats());
-		event.setStatus("CANCEL_PENDING");
-
-		// Publish event
-		bookingProducer.publish(event);
-
-		return event;
-	}
+//	public CancelBookingEvent cancelBooking(Long bookingId) {
+//		Booking booking = bookingRepository.findById(bookingId)
+//				.orElseThrow(() -> new RuntimeException("Booking not found"));
+//
+//		if (!"CONFIRMED".equals(booking.getStatus())) {
+//			throw new IllegalStateException("Only CONFIRMED bookings can be cancelled");
+//		}
+//
+//		booking.setStatus("CANCEL_PENDING");
+//		bookingRepository.save(booking);
+//
+//		CancelBookingEvent event = new CancelBookingEvent();
+//		event.setBookingId(booking.getBookingId());
+//		event.setBusId(booking.getBusId());
+//		event.setNoOfSeats(booking.getNumSeats());
+//		event.setStatus("CANCEL_PENDING");
+//
+//		// Publish event
+//		bookingProducer.publish(event);
+//
+//		return event;
+//	}
 
 }

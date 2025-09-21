@@ -1,7 +1,9 @@
-
+server:
+  port: 8083
+  
 spring:
   application:
-    name: PaymentService
+    name: payment-service
     
   datasource:
     url: jdbc:postgresql://localhost:5432/payment_db   # The JDBC URL for the database

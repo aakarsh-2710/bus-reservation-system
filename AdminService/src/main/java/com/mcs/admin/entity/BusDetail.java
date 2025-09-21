@@ -13,7 +13,7 @@ public class BusDetail {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long busId;
+	private Integer busId;
 
 	@Column(unique = true, nullable = false)
 	private String busNumber;
@@ -41,11 +41,11 @@ public class BusDetail {
 		this.price = price;
 	}
 
-	public Long getBusId() {
+	public Integer getBusId() {
 		return busId;
 	}
 
-	public void setBusId(Long busId) {
+	public void setBusId(Integer busId) {
 		this.busId = busId;
 	}
 
