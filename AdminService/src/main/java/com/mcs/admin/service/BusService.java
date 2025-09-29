@@ -45,7 +45,7 @@ public class BusService {
 	}
 
 	private void publishAddEventToKafka(BusDetail busData) {
-		BusAddDTO event = new BusAddDTO(busData.getBusId(), busData.getTotalSeats(), LocalDateTime.now());
+		BusAddDTO event = new BusAddDTO(busData.getBusId(), busData.getTotalSeats());
 		try {
 			String payload = objectMapper.writeValueAsString(event);
 			kafkaTemplate.send("bus.add.event", busData.getBusId().toString(), payload);
