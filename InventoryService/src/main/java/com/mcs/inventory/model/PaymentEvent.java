@@ -1,18 +1,20 @@
 package com.mcs.inventory.model;
 
+import java.util.UUID;
+
 public class PaymentEvent {
 
-	private String bookingNo;
+	private UUID bookingId;
 	private Integer busId;
 	private int seatsBooked;
 	private String status; // SUCCESS / FAILED
 
-	public String getBookingNo() {
-		return bookingNo;
+	public UUID getBookingId() {
+		return bookingId;
 	}
 
-	public void setBookingNo(String bookingNo) {
-		this.bookingNo = bookingNo;
+	public void setBookingId(UUID bookingId) {
+		this.bookingId = bookingId;
 	}
 
 	public Integer getBusId() {

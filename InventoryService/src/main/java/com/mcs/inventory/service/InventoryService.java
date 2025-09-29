@@ -5,9 +5,10 @@ import java.util.Optional;
 
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.mcs.inventory.entity.BusInventory;
-import com.mcs.inventory.model.BusInventoryDTO;
+import com.mcs.inventory.model.BusAddDTO;
 import com.mcs.inventory.model.CancelBookingEvent;
 import com.mcs.inventory.model.InventoryEvent;
 import com.mcs.inventory.model.PaymentEvent;
@@ -16,6 +17,7 @@ import com.mcs.inventory.repository.BusInventoryRepository;
 import jakarta.validation.Valid;
 
 @Service
+@Transactional
 public class InventoryService {
 
 	private final BusInventoryRepository repository;
@@ -31,7 +33,7 @@ public class InventoryService {
 				.orElseThrow(() -> new RuntimeException("Bus not found"));
 
 		InventoryEvent inventoryEvent = new InventoryEvent();
-		inventoryEvent.setBookingNo(event.getBookingNo());
+		inventoryEvent.setBookingId(event.getBookingId());
 		inventoryEvent.setBusId(event.getBusId());
 
 		if ("SUCCESS".equals(event.getStatus()) && inv.getAvailableSeats() >= event.getSeatsBooked()) {
@@ -47,14 +49,13 @@ public class InventoryService {
 		kafkaTemplate.send("inventory-events", inventoryEvent);
 	}
 
-	public void addInventory(@Valid BusInventoryDTO inventoryDTO) {
+	public void addInventory(@Valid BusAddDTO inventoryDTO) {
 
 		BusInventory busInventory = new BusInventory();
 		busInventory.setBusId(inventoryDTO.getBusId());
 		busInventory.setAvailableSeats(inventoryDTO.getAvailableSeats());
 
-		LocalDateTime dateTime = LocalDateTime.now();
-		busInventory.setLastUpdated(dateTime);
+		busInventory.setLastUpdated(LocalDateTime.now());
 
 		repository.save(busInventory);
 
@@ -70,7 +71,7 @@ public class InventoryService {
 
 		// notify booking service
 		InventoryEvent inventoryEvent = new InventoryEvent();
-		inventoryEvent.setBookingNo(event.getBookingNo());
+		inventoryEvent.setBookingId(event.getBookingId());
 		inventoryEvent.setBusId(event.getBusId());
 		inventoryEvent.setStatus("CANCELLED");
 

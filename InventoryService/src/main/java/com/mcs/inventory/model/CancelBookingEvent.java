@@ -1,17 +1,19 @@
 package com.mcs.inventory.model;
 
+import java.util.UUID;
+
 public class CancelBookingEvent {
-	private String bookingNo;
+	private UUID bookingId;
 	private Integer busId;
 	private int noOfSeats;
 	private String status; // CANCEL_PENDING / CANCELLED
 
-	public String getBookingNo() {
-		return bookingNo;
+	public UUID getBookingId() {
+		return bookingId;
 	}
 
-	public void setBookingNo(String bookingNo) {
-		this.bookingNo = bookingNo;
+	public void setBookingId(UUID bookingId) {
+		this.bookingId = bookingId;
 	}
 
 	public Integer getBusId() {
