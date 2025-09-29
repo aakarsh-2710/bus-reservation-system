@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.mcs.admin.exception.DuplicateResourceException;
 import com.mcs.admin.exception.ResourceNotFoundException;
 import com.mcs.admin.model.BusDetailDTO;
-import com.mcs.admin.model.UpdateBusDetailDTO;
 import com.mcs.admin.service.BusService;
 import com.mcs.admin.util.MessageConstant;
 import com.mcs.admin.util.ResponseTemplate;
@@ -47,7 +46,7 @@ public class BusController {
 	}
 
 	@PutMapping("/updateBus/{busId}")
-	public ResponseEntity<?> updateBus(@PathVariable Integer busId, @Valid @RequestBody UpdateBusDetailDTO busDetailDTO) {
+	public ResponseEntity<?> updateBus(@PathVariable Integer busId, @Valid @RequestBody BusDetailDTO busDetailDTO) {
 
 		try {
 			busService.updateBusDetail(busId, busDetailDTO);

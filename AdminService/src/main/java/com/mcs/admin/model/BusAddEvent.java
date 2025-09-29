@@ -2,19 +2,13 @@ package com.mcs.admin.model;
 
 import java.time.LocalDateTime;
 
-import jakarta.validation.constraints.NotNull;
+public class BusAddEvent {
 
-public class BusInventoryDTO {
-
-	@NotNull
 	private Integer busId;
-	@NotNull
 	private Integer availableSeats;
-	@NotNull
 	private LocalDateTime lastUpdated;
 
-	public BusInventoryDTO(@NotNull Integer busId, @NotNull Integer availableSeats,
-			@NotNull LocalDateTime lastUpdated) {
+	public BusAddEvent(Integer busId, Integer availableSeats, LocalDateTime lastUpdated) {
 		this.busId = busId;
 		this.availableSeats = availableSeats;
 		this.lastUpdated = lastUpdated;

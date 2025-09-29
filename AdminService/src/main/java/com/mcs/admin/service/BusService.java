@@ -3,16 +3,18 @@ package com.mcs.admin.service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mcs.admin.entity.BusDetail;
 import com.mcs.admin.exception.DuplicateResourceException;
 import com.mcs.admin.exception.ResourceNotFoundException;
+import com.mcs.admin.model.BusAddEvent;
+import com.mcs.admin.model.BusDeleteEvent;
 import com.mcs.admin.model.BusDetailDTO;
-import com.mcs.admin.model.BusInventoryDTO;
-import com.mcs.admin.model.UpdateBusDetailDTO;
 import com.mcs.admin.repository.BusRepository;
 import com.mcs.admin.util.MessageConstant;
 
@@ -21,11 +23,14 @@ import com.mcs.admin.util.MessageConstant;
 public class BusService {
 
 	private BusRepository busRepository;
-	private RestTemplate restTemplate;
+	private KafkaTemplate<String, String> kafkaTemplate;
+	private ObjectMapper objectMapper;
 
-	public BusService(BusRepository busRepository, RestTemplate restTemplate) {
+	public BusService(BusRepository busRepository, KafkaTemplate<String, String> kafkaTemplate,
+			ObjectMapper objectMapper) {
 		this.busRepository = busRepository;
-		this.restTemplate = restTemplate;
+		this.kafkaTemplate = kafkaTemplate;
+		this.objectMapper = objectMapper;
 	}
 
 	public void saveBusDetail(BusDetailDTO busDetailDTO) {
@@ -33,15 +38,20 @@ public class BusService {
 				busDetailDTO.getDestination(), busDetailDTO.getTotalSeats(), busDetailDTO.getPrice());
 
 		var busData = busRepository.save(busDetail);
-		// updating bus info in bus inventory
-		addDataToInventory(busData.getBusId(), busData.getTotalSeats());
+
+		// publish add event to kafka
+		publishAddEventToKafka(busData);
+
 	}
 
-	private void addDataToInventory(Integer busId, Integer totalSeats) {
-
-		BusInventoryDTO busInventoryDTO = new BusInventoryDTO(busId, totalSeats, LocalDateTime.now());
-
-		restTemplate.postForObject("http://INVENTORY-SERVICE/inventory/add", busInventoryDTO, Object.class);
+	private void publishAddEventToKafka(BusDetail busData) {
+		BusAddEvent event = new BusAddEvent(busData.getBusId(), busData.getTotalSeats(), LocalDateTime.now());
+		try {
+			String payload = objectMapper.writeValueAsString(event);
+			kafkaTemplate.send("bus.add.event", busData.getBusId().toString(), payload);
+		} catch (JsonProcessingException e) {
+			throw new RuntimeException("Failed to serialize event", e);
+		}
 
 	}
 
@@ -51,17 +61,25 @@ public class BusService {
 				.orElseThrow(() -> new ResourceNotFoundException(String.format(MessageConstant.BUS_NOT_FOUND, busId)));
 
 		busRepository.deleteById(existingBus.getBusId());
-		deleteFromInventory(existingBus.getBusId());
+
+		// publish delete event to kafka
+		publishDeleteEventToKafka(existingBus);
 	}
 
-	private void deleteFromInventory(Integer busId) {
-		String url = "http://INVENTORY-SERVICE/inventory/delete/" + busId;
-		restTemplate.delete(url);
+	private void publishDeleteEventToKafka(BusDetail existingBus) {
+		BusDeleteEvent event = new BusDeleteEvent(existingBus.getBusId(), "Bus is not operational");
+		try {
+			String payload = objectMapper.writeValueAsString(event);
+			kafkaTemplate.send("bus.delete.event", event.getBusId().toString(), payload);
+		} catch (JsonProcessingException e) {
+			throw new RuntimeException("Failed to serialize event", e);
+		}
+
 	}
 
 	// We can not update number of seats in the bus. Hence inventory requires no
 	// change
-	public void updateBusDetail(Integer busId, UpdateBusDetailDTO busDetailDTO) {
+	public void updateBusDetail(Integer busId, BusDetailDTO busDetailDTO) {
 		BusDetail existingBus = busRepository.findById(busId)
 				.orElseThrow(() -> new ResourceNotFoundException(String.format(MessageConstant.BUS_NOT_FOUND, busId)));
 
