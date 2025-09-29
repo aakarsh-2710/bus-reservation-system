@@ -1,10 +1,10 @@
 package com.mcs.admin.model;
 
-public class BusDeleteEvent {
+public class BusDeleteDTO {
 	private Integer busId;
 	private String reason;
 
-	public BusDeleteEvent(Integer busId, String reason) {
+	public BusDeleteDTO(Integer busId, String reason) {
 		this.busId = busId;
 		this.reason = reason;
 	}

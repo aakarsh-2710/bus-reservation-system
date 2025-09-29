@@ -2,13 +2,13 @@ package com.mcs.admin.model;
 
 import java.time.LocalDateTime;
 
-public class BusAddEvent {
+public class BusAddDTO {
 
 	private Integer busId;
 	private Integer availableSeats;
 	private LocalDateTime lastUpdated;
 
-	public BusAddEvent(Integer busId, Integer availableSeats, LocalDateTime lastUpdated) {
+	public BusAddDTO(Integer busId, Integer availableSeats, LocalDateTime lastUpdated) {
 		this.busId = busId;
 		this.availableSeats = availableSeats;
 		this.lastUpdated = lastUpdated;

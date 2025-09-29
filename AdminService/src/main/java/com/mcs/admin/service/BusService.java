@@ -12,8 +12,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mcs.admin.entity.BusDetail;
 import com.mcs.admin.exception.DuplicateResourceException;
 import com.mcs.admin.exception.ResourceNotFoundException;
-import com.mcs.admin.model.BusAddEvent;
-import com.mcs.admin.model.BusDeleteEvent;
+import com.mcs.admin.model.BusAddDTO;
+import com.mcs.admin.model.BusDeleteDTO;
 import com.mcs.admin.model.BusDetailDTO;
 import com.mcs.admin.repository.BusRepository;
 import com.mcs.admin.util.MessageConstant;
@@ -45,7 +45,7 @@ public class BusService {
 	}
 
 	private void publishAddEventToKafka(BusDetail busData) {
-		BusAddEvent event = new BusAddEvent(busData.getBusId(), busData.getTotalSeats(), LocalDateTime.now());
+		BusAddDTO event = new BusAddDTO(busData.getBusId(), busData.getTotalSeats(), LocalDateTime.now());
 		try {
 			String payload = objectMapper.writeValueAsString(event);
 			kafkaTemplate.send("bus.add.event", busData.getBusId().toString(), payload);
@@ -67,7 +67,7 @@ public class BusService {
 	}
 
 	private void publishDeleteEventToKafka(BusDetail existingBus) {
-		BusDeleteEvent event = new BusDeleteEvent(existingBus.getBusId(), "Bus is not operational");
+		BusDeleteDTO event = new BusDeleteDTO(existingBus.getBusId(), "Bus is not operational");
 		try {
 			String payload = objectMapper.writeValueAsString(event);
 			kafkaTemplate.send("bus.delete.event", event.getBusId().toString(), payload);
