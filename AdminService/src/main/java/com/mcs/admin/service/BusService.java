@@ -67,7 +67,7 @@ public class BusService {
 	}
 
 	private void publishDeleteEventToKafka(BusDetail existingBus) {
-		BusDeleteDTO event = new BusDeleteDTO(existingBus.getBusId(), "Bus is not operational");
+		BusDeleteDTO event = new BusDeleteDTO(existingBus.getBusId());
 		try {
 			String payload = objectMapper.writeValueAsString(event);
 			kafkaTemplate.send("bus.delete.event", event.getBusId().toString(), payload);
