@@ -1,41 +1,43 @@
 package com.mcs.payment.model;
 
+import java.util.UUID;
+
 public class BookingEvent {
-	private String bookingNo;
-	private String busNo;
-	private int noOfSeats;
-	private double price;
+	private UUID bookingId;
+	private Integer busId;
+	private Integer numSeats;
+	private Double totalAmount;
 
-	public String getBookingNo() {
-		return bookingNo;
+	public UUID getBookingId() {
+		return bookingId;
 	}
 
-	public void setBookingNo(String bookingNo) {
-		this.bookingNo = bookingNo;
+	public void setBookingId(UUID bookingId) {
+		this.bookingId = bookingId;
 	}
 
-	public String getBusNo() {
-		return busNo;
+	public Integer getBusId() {
+		return busId;
 	}
 
-	public void setBusNo(String busNo) {
-		this.busNo = busNo;
+	public void setBusId(Integer busId) {
+		this.busId = busId;
 	}
 
-	public int getNoOfSeats() {
-		return noOfSeats;
+	public Integer getNumSeats() {
+		return numSeats;
 	}
 
-	public void setNoOfSeats(int noOfSeats) {
-		this.noOfSeats = noOfSeats;
+	public void setNumSeats(Integer numSeats) {
+		this.numSeats = numSeats;
 	}
 
-	public double getPrice() {
-		return price;
+	public Double getTotalAmount() {
+		return totalAmount;
 	}
 
-	public void setPrice(double price) {
-		this.price = price;
+	public void setTotalAmount(Double totalAmount) {
+		this.totalAmount = totalAmount;
 	}
 
 }

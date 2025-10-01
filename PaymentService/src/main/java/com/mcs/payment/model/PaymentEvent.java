@@ -1,28 +1,15 @@
 package com.mcs.payment.model;
 
+import java.util.UUID;
+
 public class PaymentEvent {
 
-	private String bookingNo;
-	private String busNo;
+	private UUID paymentId;
+	private UUID bookingId;
+	private Integer busId;
 	private int seatsBooked;
 	private String status; // SUCCESS / FAILED
 	private double amount;
-
-	public String getBookingNo() {
-		return bookingNo;
-	}
-
-	public void setBookingNo(String bookingNo) {
-		this.bookingNo = bookingNo;
-	}
-
-	public String getBusNo() {
-		return busNo;
-	}
-
-	public void setBusNo(String busNo) {
-		this.busNo = busNo;
-	}
 
 	public int getSeatsBooked() {
 		return seatsBooked;
@@ -46,6 +33,30 @@ public class PaymentEvent {
 
 	public void setAmount(double amount) {
 		this.amount = amount;
+	}
+
+	public UUID getBookingId() {
+		return bookingId;
+	}
+
+	public void setBookingId(UUID bookingId) {
+		this.bookingId = bookingId;
+	}
+
+	public Integer getBusId() {
+		return busId;
+	}
+
+	public void setBusId(Integer busId) {
+		this.busId = busId;
+	}
+
+	public UUID getPaymentId() {
+		return paymentId;
+	}
+
+	public void setPaymentId(UUID paymentId) {
+		this.paymentId = paymentId;
 	}
 
 }

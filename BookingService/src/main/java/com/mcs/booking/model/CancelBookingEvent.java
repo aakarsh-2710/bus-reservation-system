@@ -6,7 +6,7 @@ public class CancelBookingEvent {
 	private UUID bookingId;
 	private Integer busId;
 	private int noOfSeats;
-	private String status; // CANCEL_PENDING / CANCELLED
+	private String status; // CANCEL
 
 	public UUID getBookingId() {
 		return bookingId;

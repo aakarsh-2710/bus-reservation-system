@@ -7,6 +7,7 @@ public class BookingCreatedEvent {
 	private UUID bookingId;
 	private Integer busId;
 	private Integer numSeats;
+	private Double totalAmount;
 
 	public UUID getBookingId() {
 		return bookingId;
@@ -30,6 +31,14 @@ public class BookingCreatedEvent {
 
 	public void setNumSeats(Integer numSeats) {
 		this.numSeats = numSeats;
+	}
+
+	public Double getTotalAmount() {
+		return totalAmount;
+	}
+
+	public void setTotalAmount(Double totalAmount) {
+		this.totalAmount = totalAmount;
 	}
 
 }

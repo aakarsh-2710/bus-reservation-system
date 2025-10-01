@@ -1,25 +1,27 @@
 package com.mcs.booking.model;
 
+import java.util.UUID;
+
 public class InventoryEvent {
 
-	private String bookingNo;
-	private String busNo;
+	private UUID bookingId;
+	private Integer busId;
 	private String status; // CONFIRMED / REJECTED
 
-	public String getBookingNo() {
-		return bookingNo;
+	public UUID getBookingId() {
+		return bookingId;
 	}
 
-	public void setBookingNo(String bookingNo) {
-		this.bookingNo = bookingNo;
+	public void setBookingId(UUID bookingId) {
+		this.bookingId = bookingId;
 	}
 
-	public String getBusNo() {
-		return busNo;
+	public Integer getBusId() {
+		return busId;
 	}
 
-	public void setBusNo(String busNo) {
-		this.busNo = busNo;
+	public void setBusId(Integer busId) {
+		this.busId = busId;
 	}
 
 	public String getStatus() {

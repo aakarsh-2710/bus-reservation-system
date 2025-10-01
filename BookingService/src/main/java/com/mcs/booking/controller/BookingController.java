@@ -1,5 +1,8 @@
 package com.mcs.booking.controller;
 
+import java.util.UUID;
+
+import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -7,9 +10,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.mcs.booking.entity.Booking;
 import com.mcs.booking.exception.SeatsNotAvailableException;
 import com.mcs.booking.model.BookingRequest;
@@ -45,15 +48,36 @@ public class BookingController {
 
 	}
 
-//	@GetMapping("/{bookingId}")
-//	public Booking getBookingById(@PathVariable String bookingId) {
-//		return bookingService.getBookingDetails(bookingId);
-//	}
-//
-//	@PostMapping("/cancel")
-//	public ResponseEntity<?> cancelBooking(@RequestParam Long bookingId) {
-//		bookingService.cancelBooking(bookingId);
-//		return ResponseEntity.status(201).body("Booking Canceled");
-//	}
+	@GetMapping("/{bookingId}")
+	public ResponseEntity<?> getBookingById(@PathVariable UUID bookingId) {
+		Booking bookingDetails = null;
+		try {
+			bookingDetails = bookingService.getBookingDetails(bookingId);
+
+		} catch (ResourceNotFoundException e) {
+			return ResponseTemplate.errorMsg(e.getMessage(), HttpStatus.NOT_FOUND);
+
+		} catch (Exception e) {
+			return ResponseTemplate.errorMsg(MessageConstant.TECHNICAL_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+
+		return ResponseTemplate.successMsg(bookingDetails);
+	}
+
+	@PostMapping("/cancel/{bookingId}")
+	public ResponseEntity<?> cancelBooking(@PathVariable UUID bookingId) {
+
+		try {
+			bookingService.cancelBooking(bookingId);
+
+		} catch (JsonProcessingException | IllegalStateException e) {
+			return ResponseTemplate.errorMsg(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+
+		} catch (Exception e) {
+			return ResponseTemplate.errorMsg(MessageConstant.TECHNICAL_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+
+		return ResponseEntity.status(201).body("Booking Canceled");
+	}
 
 }

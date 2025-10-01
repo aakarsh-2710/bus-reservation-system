@@ -1,30 +1,30 @@
-package com.mcs.booking.listener;
+package com.mcs.inventory.listener;
 
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mcs.booking.model.InventoryEvent;
-import com.mcs.booking.service.BookingService;
+import com.mcs.inventory.model.PaymentEvent;
+import com.mcs.inventory.service.InventoryService;
 
 @Component
-public class InventoryEventConsumer {
+public class PaymentConsumerEvent {
 
-	private final BookingService bookingService;
+	private InventoryService inventoryService;
 	private ObjectMapper objectMapper = new ObjectMapper();
 
-	public InventoryEventConsumer(BookingService bookingService) {
-		this.bookingService = bookingService;
+	public PaymentConsumerEvent(InventoryService inventoryService) {
+		this.inventoryService = inventoryService;
 	}
 
-	@KafkaListener(topics = "inventory.events", groupId = "booking-service")
+	@KafkaListener(topics = "payment.events", groupId = "inventory-service")
 	public void consume(@Payload String jsonValue) {
 		try {
-			InventoryEvent inventoryEvent = convertJsonToObject(jsonValue, InventoryEvent.class);
-			bookingService.updateBookingStatus(inventoryEvent);
+			PaymentEvent paymentEvent = convertJsonToObject(jsonValue, PaymentEvent.class);
+			inventoryService.processPaymentEvent(paymentEvent);
 		} catch (Exception e) {
-// Loggers
+			// Loggers
 		}
 	}
 

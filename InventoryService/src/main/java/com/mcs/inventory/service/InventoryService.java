@@ -36,7 +36,7 @@ public class InventoryService {
 		inventoryEvent.setBookingId(event.getBookingId());
 		inventoryEvent.setBusId(event.getBusId());
 
-		if ("SUCCESS".equals(event.getStatus()) && inv.getAvailableSeats() >= event.getSeatsBooked()) {
+		if ("SUCCESS".equals(event.getStatus())) {
 			inv.setAvailableSeats(inv.getAvailableSeats() - event.getSeatsBooked());
 			inv.setLastUpdated(LocalDateTime.now());
 			repository.save(inv);
@@ -45,8 +45,7 @@ public class InventoryService {
 		} else {
 			inventoryEvent.setStatus("REJECTED");
 		}
-
-		kafkaTemplate.send("inventory-events", inventoryEvent);
+		kafkaTemplate.send("inventory.event", event.getBookingId().toString(), inventoryEvent);
 	}
 
 	public void addInventory(@Valid BusAddDTO inventoryDTO) {
@@ -69,13 +68,6 @@ public class InventoryService {
 		inv.setLastUpdated(LocalDateTime.now());
 		repository.save(inv);
 
-		// notify booking service
-		InventoryEvent inventoryEvent = new InventoryEvent();
-		inventoryEvent.setBookingId(event.getBookingId());
-		inventoryEvent.setBusId(event.getBusId());
-		inventoryEvent.setStatus("CANCELLED");
-
-		kafkaTemplate.send("inventory-events", inventoryEvent);
 	}
 
 	public void deleteBus(Integer busId) {
